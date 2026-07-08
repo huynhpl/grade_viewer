@@ -1,0 +1,10 @@
+node_modules
+dist
+*.tsbuildinfo
+.netlify
+*.local
+.env
+.env.*
+!.env.example
+.DS_Store
+~$*.xlsx

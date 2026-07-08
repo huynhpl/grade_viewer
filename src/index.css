@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 99%;
+    --foreground: 222 24% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 24% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 24% 14%;
+
+    /* Single desaturated indigo accent */
+    --primary: 231 44% 48%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 215 25% 95%;
+    --secondary-foreground: 222 24% 20%;
+
+    --muted: 215 25% 95%;
+    --muted-foreground: 220 12% 46%;
+
+    --accent: 231 44% 95%;
+    --accent-foreground: 231 44% 32%;
+
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 152 55% 36%;
+    --success-foreground: 150 40% 98%;
+
+    --warning: 38 92% 44%;
+    --warning-foreground: 40 60% 98%;
+
+    --border: 216 18% 88%;
+    --input: 216 18% 88%;
+    --ring: 231 44% 48%;
+
+    --radius: 0.6rem;
+  }
+
+  .dark {
+    --background: 224 30% 8%;
+    --foreground: 210 30% 94%;
+
+    --card: 224 26% 11%;
+    --card-foreground: 210 30% 94%;
+
+    --popover: 224 26% 11%;
+    --popover-foreground: 210 30% 94%;
+
+    --primary: 231 60% 68%;
+    --primary-foreground: 224 40% 10%;
+
+    --secondary: 222 20% 18%;
+    --secondary-foreground: 210 30% 92%;
+
+    --muted: 222 20% 18%;
+    --muted-foreground: 217 14% 62%;
+
+    --accent: 231 30% 22%;
+    --accent-foreground: 231 60% 82%;
+
+    --destructive: 0 62% 55%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 152 48% 50%;
+    --success-foreground: 150 30% 10%;
+
+    --warning: 38 84% 58%;
+    --warning-foreground: 40 40% 10%;
+
+    --border: 220 18% 22%;
+    --input: 220 18% 24%;
+    --ring: 231 60% 68%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-family: theme("fontFamily.mono");
+  }
+}
