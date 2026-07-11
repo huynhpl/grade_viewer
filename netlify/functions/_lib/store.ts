@@ -1,4 +1,7 @@
 import { getStore } from "@netlify/blobs";
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 import seed from "../_data/seed.json";
 
@@ -29,26 +32,44 @@ export interface StoredDataset {
 const STORE_NAME = "grades";
 const KEY = "dataset";
 
+// Fallback ghi ra file tạm khi Netlify Blobs chưa được cấu hình — dùng cho
+// `netlify dev` chưa `netlify link`. Trên Netlify production, Blobs luôn sẵn
+// sàng nên nhánh này không bao giờ chạy.
+const FALLBACK_FILE = path.join(os.tmpdir(), "grade-viewer-dataset.json");
+
 function store() {
   return getStore({ name: STORE_NAME, consistency: "strong" });
 }
 
 /**
- * Đọc dữ liệu điểm. Nếu Blob chưa có (chưa từng upload), trả về dữ liệu seed
- * được đóng gói sẵn từ file Excel gốc — app hoạt động ngay sau khi deploy.
+ * Đọc dữ liệu điểm. Thứ tự ưu tiên: Netlify Blobs → file tạm cục bộ (dev) →
+ * dữ liệu seed đóng gói sẵn từ Excel gốc (app chạy ngay sau khi deploy).
  */
 export async function readDataset(): Promise<StoredDataset> {
   try {
     const blob = await store().get(KEY, { type: "json" });
     if (blob) return blob as StoredDataset;
+    // Blobs khả dụng nhưng trống → dùng seed.
+    return seed as StoredDataset;
   } catch {
-    // Blobs không khả dụng (vd. thiếu cấu hình) → dùng seed.
+    // Blobs không khả dụng (local dev chưa link) → thử file tạm, rồi seed.
   }
-  return seed as StoredDataset;
+  try {
+    const raw = await fs.readFile(FALLBACK_FILE, "utf-8");
+    return JSON.parse(raw) as StoredDataset;
+  } catch {
+    return seed as StoredDataset;
+  }
 }
 
 export async function writeDataset(data: StoredDataset): Promise<void> {
-  await store().setJSON(KEY, data);
+  try {
+    await store().setJSON(KEY, data);
+    return;
+  } catch {
+    // Blobs không khả dụng → ghi file tạm để local dev vẫn cập nhật được.
+  }
+  await fs.writeFile(FALLBACK_FILE, JSON.stringify(data), "utf-8");
 }
 
 /** Tra cứu 1 sinh viên theo mã (không phân biệt hoa/thường). */
