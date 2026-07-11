@@ -10,7 +10,7 @@ import {
   serverError,
   unauthorized,
 } from "./_lib/http";
-import { writeDataset, type StoredStudent } from "./_lib/store";
+import { initBlobs, writeDataset, type StoredStudent } from "./_lib/store";
 
 /** Bỏ dấu tiếng Việt + chuẩn hoá để so khớp tên cột. */
 function norm(s: unknown): string {
@@ -80,6 +80,7 @@ function toDob(v: unknown): string | null {
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== "POST") return methodNotAllowed();
+  initBlobs(event);
 
   const auth = verifyToken(bearer(event.headers), Date.now());
   if (!auth) return unauthorized();
@@ -159,6 +160,7 @@ export const handler: Handler = async (event) => {
     return ok({ count: students.length, updatedAt });
   } catch (err) {
     console.error("upload error", err);
-    return serverError("Không xử lý được tệp Excel");
+    const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    return serverError(`Không xử lý được tệp Excel — ${detail}`);
   }
 };

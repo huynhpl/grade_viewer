@@ -2,13 +2,14 @@ import type { Handler } from "@netlify/functions";
 
 import { createToken } from "./_lib/auth";
 import { badRequest, methodNotAllowed, ok, serverError, unauthorized } from "./_lib/http";
-import { findStudent, readDataset } from "./_lib/store";
+import { findStudent, initBlobs, readDataset } from "./_lib/store";
 
 const INSTRUCTOR_USER = process.env.INSTRUCTOR_USER || "VKH100880";
 const INSTRUCTOR_PASS = process.env.INSTRUCTOR_PASS || "VKH100880";
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== "POST") return methodNotAllowed();
+  initBlobs(event);
 
   let payload: { role?: string; username?: string; password?: string };
   try {

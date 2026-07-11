@@ -1,4 +1,5 @@
-import { getStore } from "@netlify/blobs";
+import { connectLambda, getStore } from "@netlify/blobs";
+import type { HandlerEvent } from "@netlify/functions";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -37,6 +38,24 @@ const KEY = "dataset";
 // sàng nên nhánh này không bao giờ chạy.
 const FALLBACK_FILE = path.join(os.tmpdir(), "grade-viewer-dataset.json");
 
+// Chỉ dùng fallback file khi chạy local (`netlify dev`). Trên production nếu
+// Blobs lỗi thì phải báo lỗi thật, KHÔNG ghi ra /tmp (ephemeral, mỗi instance
+// một khác → mất dữ liệu ngầm).
+const IS_LOCAL = process.env.NETLIFY_DEV === "true";
+
+/**
+ * Với Netlify Functions dạng classic (`export const handler`), Blobs KHÔNG được
+ * tự inject — phải gọi connectLambda(event) trước getStore(). (Functions 2.0
+ * mới auto-inject.) Gọi ở đầu mỗi handler có dùng store.
+ */
+export function initBlobs(event: HandlerEvent): void {
+  try {
+    connectLambda(event as never);
+  } catch {
+    // Local chưa link / môi trường không hỗ trợ → bỏ qua, sẽ dùng fallback.
+  }
+}
+
 function store() {
   return getStore({ name: STORE_NAME, consistency: "strong" });
 }
@@ -52,22 +71,26 @@ export async function readDataset(): Promise<StoredDataset> {
     // Blobs khả dụng nhưng trống → dùng seed.
     return seed as StoredDataset;
   } catch {
-    // Blobs không khả dụng (local dev chưa link) → thử file tạm, rồi seed.
+    // Blobs không khả dụng.
   }
-  try {
-    const raw = await fs.readFile(FALLBACK_FILE, "utf-8");
-    return JSON.parse(raw) as StoredDataset;
-  } catch {
-    return seed as StoredDataset;
+  if (IS_LOCAL) {
+    try {
+      const raw = await fs.readFile(FALLBACK_FILE, "utf-8");
+      return JSON.parse(raw) as StoredDataset;
+    } catch {
+      // chưa có file tạm
+    }
   }
+  return seed as StoredDataset;
 }
 
 export async function writeDataset(data: StoredDataset): Promise<void> {
   try {
     await store().setJSON(KEY, data);
     return;
-  } catch {
-    // Blobs không khả dụng → ghi file tạm để local dev vẫn cập nhật được.
+  } catch (err) {
+    // Local dev: ghi file tạm để vẫn thử được. Production: ném lỗi thật.
+    if (!IS_LOCAL) throw err;
   }
   await fs.writeFile(FALLBACK_FILE, JSON.stringify(data), "utf-8");
 }
