@@ -57,7 +57,10 @@ export function initBlobs(event: HandlerEvent): void {
 }
 
 function store() {
-  return getStore({ name: STORE_NAME, consistency: "strong" });
+  // KHÔNG dùng consistency: "strong" — nó cần 'uncachedEdgeURL' vốn không có
+  // trong runtime Lambda function (chỉ có ở edge). Dùng eventual consistency
+  // mặc định; Blobs vẫn đồng bộ nhanh, đủ dùng cho việc cập nhật điểm.
+  return getStore({ name: STORE_NAME });
 }
 
 /**
